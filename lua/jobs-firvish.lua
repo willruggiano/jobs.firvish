@@ -1,8 +1,9 @@
 ---@tag jobs.firvish
 
+local firvish = require "firvish"
 local lib = require "jobs-firvish.lib"
 
-local Buffer = require "firvish.types.buffer"
+local Buffer = require "firvish.buffer"
 local JobList = require "firvish.types.joblist"
 
 local function get_joblist()
@@ -28,13 +29,39 @@ jobs.config = {
 jobs.filename = "firvish://jobs"
 
 function jobs.setup(opts)
-  jobs.config = vim.tbl_deep_extend("force", jobs.config, opts)
+  jobs.config = vim.tbl_deep_extend("force", jobs.config, opts or {})
 
-  vim.filetype.add {
-    filename = {
-      [jobs.filename] = "firvish-jobs",
+  firvish.extension.register("jobs", {
+    -- TODO: Something like this?
+    -- buffer = {
+    --   on_enter = function(buffer)
+    --     lib.refresh(get_joblist(), buffer)
+    --   end,
+    --   on_exit = function(buffer)
+    --     --
+    --   end,
+    --   on_write = function(buffer, old, new)
+    --     local lines = buffer:get_lines()
+    --     local current = get_joblist()
+    --     local desired = JobList.parse(lines)
+    --     local diff = current / desired
+    --     for i, job in diff:iter() do
+    --       if job.running then
+    --         job:stop()
+    --       end
+    --       current:remove(i)
+    --     end
+    --     return false --> buffer.options.modified
+    --   end,
+    -- },
+    config = jobs.config,
+    filetype = {
+      filename = jobs.filename,
+      filetype = function(_, bufnr)
+        jobs.setup_buffer(bufnr)
+      end,
     },
-  }
+  })
 
   ---@tag :Jobs
   ---@brief [[
@@ -42,7 +69,6 @@ function jobs.setup(opts)
   ---@brief ]]
   vim.api.nvim_create_user_command("Jobs", function()
     vim.cmd(jobs.config.open .. " " .. jobs.filename)
-    jobs.setup_buffer(vim.api.nvim_get_current_buf())
   end, {
     desc = "Open the joblist",
   })
@@ -65,56 +91,40 @@ function jobs.setup(opts)
 end
 
 function jobs.setup_buffer(bufnr)
-  local buffer = Buffer:new(bufnr)
-  buffer:set_options {
-    bufhidden = "wipe",
-    buflisted = false,
-    buftype = "acwrite",
-    swapfile = false,
-  }
+  local buffer = Buffer.new(bufnr)
 
-  local config = jobs.config
-  local default_opts = { buffer = bufnr, noremap = true, silent = true }
-  for mode, mappings in pairs(config.keymaps) do
-    for lhs, opts in pairs(mappings) do
-      if opts then
-        vim.keymap.set(mode, lhs, opts.callback, vim.tbl_extend("force", default_opts, opts))
-      end
-    end
-  end
-
-  lib.refresh(get_joblist(), buffer)
+  lib.refresh(buffer, get_joblist())
 
   vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
     buffer = bufnr,
     callback = function()
-      lib.refresh(get_joblist(), buffer)
+      lib.refresh(buffer, get_joblist())
     end,
   })
 
-  vim.api.nvim_create_autocmd("BufWriteCmd", {
-    buffer = bufnr,
-    callback = function()
-      local lines = buffer:get_lines()
-      local current = get_joblist()
-      local desired = JobList.parse(lines)
-      local diff = current / desired
-      for i, job in diff:iter() do
-        if job.running then
-          job:stop()
-        end
-        current:remove(i)
+  -- TODO: How can this be genericized?
+  buffer:create_autocmd("BufWriteCmd", function()
+    local lines = buffer:get_lines()
+    local current = get_joblist()
+    local desired = JobList.parse(lines)
+    local diff = current / desired
+    for i, job in diff:iter() do
+      if job.running then
+        job:stop()
       end
-      buffer:set_option("modified", false)
-    end,
-  })
+      current:remove(i)
+    end
+    buffer.options.modified = false
+  end)
+  -- perhaps...
+  -- buffer:on_write(function(old, new)
+  --   -- Take action. Perhaps by computing the diff...
+  --   -- e.g. delete the corresponding job for each removed line
+  -- end)
 
-  vim.api.nvim_create_autocmd("BufWritePost", {
-    buffer = bufnr,
-    callback = function()
-      lib.refresh(buffer)
-    end,
-  })
+  buffer:create_autocmd("BufWritePost", function()
+    lib.refresh(buffer, get_joblist())
+  end)
 end
 
 return jobs
