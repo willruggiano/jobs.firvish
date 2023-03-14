@@ -1,8 +1,4 @@
 ---@tag jobs.firvish
----@tag :Jobs
----@brief [[
----Open the job list.
----@brief ]]
 
 local lib = require "jobs-firvish.lib"
 
@@ -40,12 +36,32 @@ function jobs.setup(opts)
     },
   }
 
+  ---@tag :Jobs
+  ---@brief [[
+  ---Open the job list.
+  ---@brief ]]
   vim.api.nvim_create_user_command("Jobs", function()
     vim.cmd(jobs.config.open .. " " .. jobs.filename)
     jobs.setup_buffer(vim.api.nvim_get_current_buf())
   end, {
     desc = "Open the joblist",
   })
+
+  ---@tag :Run
+  ---@brief [[
+  ---Run an external command.
+  ---@brief ]]
+  vim.api.nvim_create_user_command("Run", function(args)
+    require("firvish").start_job {
+      command = args.fargs[1],
+      args = vim.list_slice(args.fargs, 2),
+      filetype = "log",
+      title = args.fargs[1],
+      errorlist = "quickfix",
+      eopen = args.bang,
+      bopen = args.bang and { headers = false, open = false } or true,
+    }
+  end, { bang = true, desc = "Run an external command", nargs = "+" })
 end
 
 function jobs.setup_buffer(bufnr)

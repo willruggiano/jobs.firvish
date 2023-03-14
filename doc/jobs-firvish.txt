@@ -1,5 +1,14 @@
                                                                   *jobs.firvish*
-                                                                  *:FirvishJobs*
+jobs.setup()                                                        *jobs.setup*
+
+
+                                                                         *:Jobs*
 Open the job list.
+
+                                                                       *:Run[!]*
+Run an external command.
+
+jobs.setup_buffer()                                          *jobs.setup_buffer*
+
 
 vim:tw=78:ts=8:noet:ft=help:norl:
