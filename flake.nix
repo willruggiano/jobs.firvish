@@ -22,7 +22,7 @@
           name = "update-docs";
           runtimeInputs = with pkgs; [lemmy-help];
           text = ''
-            lemmy-help lua/jobs-firvish.lua > doc/jobs-firvish.txt
+            lemmy-help -c lua/jobs-firvish.lua > doc/jobs-firvish.txt
           '';
         };
 
