@@ -18,8 +18,8 @@
         system,
         ...
       }: {
-        apps.update-docs.program = pkgs.writeShellApplication {
-          name = "update-docs";
+        apps.generate-vimdoc.program = pkgs.writeShellApplication {
+          name = "generate-vimdoc";
           runtimeInputs = with pkgs; [lemmy-help];
           text = ''
             lemmy-help -c lua/jobs-firvish.lua > doc/jobs-firvish.txt

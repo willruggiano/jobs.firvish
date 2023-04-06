@@ -1,0 +1,19 @@
+name: Generate vimdocs
+on:
+  push:
+    branches: main
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: cachix/install-nix-action@v20
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+      - run: "nix run .#generate-vimdoc"
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "chore: generate vimdocs"
