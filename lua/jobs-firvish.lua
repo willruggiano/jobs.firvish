@@ -1,3 +1,74 @@
+---@mod jobs-firvish
+---@brief [[
+---Like |:ls| but for Firvish jobs.
+---
+---Setup:
+--->
+---require("firvish").setup()
+---require("jobs-firvish").setup()
+---<
+---
+---Invoke via |:Firvish|:
+---
+--->
+---:Firvish[!] jobs [flags]
+---<
+---
+---[!] will invert the behavior of [flags].
+---
+---Indicators (chars in the same column are mutually exclusive):
+---a       an active job-output buffer: it is loaded and visible
+---h       a hidden job-output buffer: it is loaded, but currently not
+---           displayed in a window
+--- R      a running job
+--- F      a finished job
+---  x     a job that exited with a non-zero exit code
+---
+---[flags] can be a combination of the following characters,
+---which restrict the jobs to be listed:
+---        a       active job-output buffers
+---        h       hidden job-output buffers
+---        R       runnings jobs
+---        F       finished jobs
+---        x       jobs that exited with a non-zero exit code
+---        t       show start-time or end-time (if 'F') and sort jobs
+---Combining flags means they are "and"ed together, e.g.:
+---        Fx      finished jobs that exited with a non-zero exit code
+---When [!] is included, combining flags means they are "or"ed together.
+---
+---Invoke via `firvish.extensions`:
+---
+--->
+---require("firvish").extensions.jobs:open()
+----- or, to pass arguments (e.g. flags)
+---require("firvish").extensions.jobs:run { ... }
+---<
+---
+---@brief ]]
+
+---@tag :Run
+---@brief [[
+---Usage: ~
+---
+---  :Run[!] {cmd} [args]
+---
+---  Spawns {cmd} in the background.
+---  If [!] is given, redirect the output of {cmd} to the errorlist
+---  (quickfix by default).
+---  [args] are |expand()|ed before being passed to {cmd}
+---@brief ]]
+
+---@tag :Start
+---@brief [[
+---Usage: ~
+---
+---  :Start {cmd} [args]
+---
+---  Spawns {cmd} in the foreground, i.e. the job-output buffer is
+---  opened in the current window as soon as {cmd} starts.
+---  [args] are |expand()|ed before being passed to {cmd}
+---@brief ]]
+
 local Filter = require "firvish.filter"
 local JobInfo = require "jobs-firvish.jobinfo"
 
@@ -201,10 +272,18 @@ function M.setup()
   vim.api.nvim_create_user_command("Run", function(args)
     require("firvish").start_job {
       command = args.fargs[1],
-      args = vim.list_slice(args.fargs, 2),
+      args = vim.tbl_map(vim.fn.expand, vim.list_slice(args.fargs, 2)),
       bopen = false,
       errorlist = args.bang and "quickfix" or false,
       eopen = args.bang,
+    }
+  end, { bang = true, desc = "Spawn an external command in the background", nargs = "+" })
+
+  vim.api.nvim_create_user_command("Start", function(args)
+    require("firvish").start_job {
+      command = args.fargs[1],
+      args = vim.tbl_map(vim.fn.expand, vim.list_slice(args.fargs, 2)),
+      bopen = true,
     }
   end, { bang = true, desc = "Spawn an external command", nargs = "+" })
 end
