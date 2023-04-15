@@ -261,7 +261,12 @@ end
 
 ---@package
 function Extension:execute(buffer, args)
-  set_lines(buffer, args.fargs[2], args.bang)
+  buffer:open(args.how)
+  if args.fargs then
+    set_lines(buffer, args.fargs[2], args.bang)
+  else
+    set_lines(buffer)
+  end
 end
 
 local M = {}
