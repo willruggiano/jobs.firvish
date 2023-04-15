@@ -232,7 +232,7 @@ function Extension.new()
   }
   obj.options = {
     bufhidden = "hide",
-    filetype = "firvish",
+    filetype = "firvish-jobs",
   }
 
   return setmetatable(obj, Extension)
