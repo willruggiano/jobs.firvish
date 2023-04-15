@@ -260,7 +260,7 @@ function Extension:on_buf_write_post(buffer)
 end
 
 ---@package
-function Extension:update(buffer, args)
+function Extension:execute(buffer, args)
   set_lines(buffer, args.fargs[2], args.bang)
 end
 
